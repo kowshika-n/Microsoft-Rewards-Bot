@@ -165,6 +165,10 @@ def get_dates(days_to_get=4):
 
 
 def get_search_terms():
+    def add_new_search_term(existing_terms, new_term):
+        if new_term not in existing_terms:
+            existing_terms.append(new_term)
+
     dates = get_dates()
 
     search_terms = []
@@ -176,9 +180,9 @@ def get_search_terms():
             response = json.loads(request.text[5:])
             # get all trending searches with their related queries
             for topic in response['default']['trendingSearchesDays'][0]['trendingSearches']:
-                search_terms.append(topic['title']['query'].lower())
+                add_new_search_term(search_terms, topic['title']['query'].lower())
                 for related_topic in topic['relatedQueries']:
-                    search_terms.append(related_topic['query'].lower())
+                    add_new_search_term(search_terms, related_topic['query'].lower())
             time.sleep(random.randint(3, 5))
         except RequestException:
             logging.error('Error retrieving google trends json.')
@@ -250,7 +254,7 @@ def browser_setup(headless_mode, user_agent):
     options.add_argument(f'user-agent={user_agent}')
     options.add_argument('--disable-webgl')
     options.add_argument('--no-sandbox')
-    options.add_argument('--disable-extensions')
+    options.add_argument("--disable-extensions")
     options.add_argument('--disable-dev-shm-usage')
     options.add_experimental_option('w3c', False)
 
@@ -494,7 +498,7 @@ def main_window():
     """
     try:
         for i in range(1, len(browser.window_handles)):
-            browser.switch_to.window(browser.window_handles[i])
+            browser.switch_to.window(browser.window_handles[-1])
             browser.close()
     except WebDriverException:
         logging.error('Error when switching to main_window')
@@ -613,8 +617,9 @@ def iter_dailies():
                 logging.debug(msg='Poll identified.')
                 daily_poll()
             # check for quiz by checking for ID
-            elif find_by_id('rqStartQuiz'):
-                click_by_id('rqStartQuiz')
+            elif (find_by_id('rqStartQuiz') or find_by_id('rqAnswerOptionNum0') or find_by_id('rqAnswerOption0')):
+                if find_by_id('rqStartQuiz'):
+                    click_by_id('rqStartQuiz')
                 # test for drag or drop or regular quiz
                 if find_by_id('rqAnswerOptionNum0'):
                     logging.debug(msg='Drag and Drop Quiz identified.')
@@ -677,12 +682,10 @@ def lightning_quiz():
     for question_round in range(10):
         logging.debug(msg=f'Round# {question_round}')
         if find_by_id('rqAnswerOption0'):
-            first_page = browser.find_element_by_id('rqAnswerOption0').get_attribute("data-serpquery")
-            browser.get(f"https://www.bing.com{first_page}")
             time.sleep(3)
             for i in range(10):
                 if find_by_id(f'rqAnswerOption{i}'):
-                    browser.execute_script(f"document.querySelector('#rqAnswerOption{i}').click();")
+                    browser.execute_script(f"document.querySelectorAll('#rqAnswerOption{i}').forEach(el=>el.click());")
                     logging.debug(msg=f'Clicked {i}')
                     time.sleep(2)
         # let new page load
@@ -903,11 +906,19 @@ if __name__ == '__main__':
                 try:
                     log_in(email, password)
                     browser.get(DASHBOARD_URL)
+                    time.sleep(3)
+                    try:
+                        iter_dailies()
+                        time.sleep(3)
+                        main_window()
+                    except:
+                        logging.info(msg=f'Mobile App Task not found')
+                    time.sleep(1)
                     browser.get(BING_SEARCH_URL)
                     # mobile search
                     search(search_list, mobile_search=True)
                     # get point totals if running just in mobile mode
-                    if not parser.pc_mode or not parser.quiz_mode or not parser.email_mode:
+                    if not parser.pc_mode and not parser.quiz_mode and not parser.email_mode:
                         get_point_total(mobile=True, log=True)
                     browser.quit()
                 except KeyboardInterrupt:
