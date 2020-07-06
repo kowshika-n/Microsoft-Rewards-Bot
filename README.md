@@ -22,8 +22,9 @@ This program will automatically complete search requests and quizzes on Microsof
 2.  Modify `ms_rewards_login_dict.json` with your account names and passwords,
     remove `.example` from filename.
 3.  Enter into cmd/terminal/shell: `pip install -r requirements.txt`
-    - This installs dependencies (selenium) and Telegram-Bot
-	Enter into cmd/terminal/shell: `telegram-send -g --configure`
+    - This installs dependencies (selenium)
+    The bot only works when Telegram is set up
+	- Enter into cmd/terminal/shell: `telegram-send -g --configure`
 	- Follow Instruction to Set-Up Telegram Bot 
 4.  Enter into cmd/terminal/shell: `python ms_rewards.py --headless --mobile --pc --quiz`
     - enter `-h` or `--help` for more instructions
