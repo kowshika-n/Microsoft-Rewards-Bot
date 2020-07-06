@@ -42,6 +42,7 @@ __all__ = ["configure", "send"]
 
 global_config = "/etc/telegram-send.conf"
 
+
 def main():
     colorama.init()
     parser = argparse.ArgumentParser(description="Send messages and files over Telegram.",
@@ -49,27 +50,47 @@ def main():
     parser.add_argument("message", help="message(s) to send", nargs="*")
     parser.add_argument("--format", default="text", dest="parse_mode", choices=["text", "markdown", "html"],
                         help="How to format the message(s). Choose from 'text', 'markdown', or 'html'")
-    parser.add_argument("--stdin", help="Send text from stdin.", action="store_true")
-    parser.add_argument("--pre", help="Send preformatted fixed-width (monospace) text.", action="store_true")
-    parser.add_argument("--disable-web-page-preview", help="disable link previews in the message(s)", action="store_true")
-    parser.add_argument("--silent", help="send silently, user will receive a notification without sound", action="store_true")
-    parser.add_argument("-c", "--configure", help="configure %(prog)s", action="store_true")
-    parser.add_argument("--configure-channel", help="configure %(prog)s for a channel", action="store_true")
-    parser.add_argument("--configure-group", help="configure %(prog)s for a group", action="store_true")
-    parser.add_argument("-f", "--file", help="send file(s)", nargs="+", type=argparse.FileType("rb"))
-    parser.add_argument("-i", "--image", help="send image(s)", nargs="+", type=argparse.FileType("rb"))
-    parser.add_argument("-s", "--sticker", help="send stickers(s)", nargs="+", type=argparse.FileType("rb"))
-    parser.add_argument("--animation", help="send animation(s) (GIF or soundless H.264/MPEG-4 AVC video)", nargs="+", type=argparse.FileType("rb"))
-    parser.add_argument("--video", help="send video(s)", nargs="+", type=argparse.FileType("rb"))
-    parser.add_argument("--audio", help="send audio(s)", nargs="+", type=argparse.FileType("rb"))
-    parser.add_argument("-l", "--location", help="send location(s) via latitude and longitude (separated by whitespace or a comma)", nargs="+")
+    parser.add_argument(
+        "--stdin", help="Send text from stdin.", action="store_true")
+    parser.add_argument(
+        "--pre", help="Send preformatted fixed-width (monospace) text.", action="store_true")
+    parser.add_argument("--disable-web-page-preview",
+                        help="disable link previews in the message(s)", action="store_true")
+    parser.add_argument(
+        "--silent", help="send silently, user will receive a notification without sound", action="store_true")
+    parser.add_argument("-c", "--configure",
+                        help="configure %(prog)s", action="store_true")
+    parser.add_argument("--configure-channel",
+                        help="configure %(prog)s for a channel", action="store_true")
+    parser.add_argument(
+        "--configure-group", help="configure %(prog)s for a group", action="store_true")
+    parser.add_argument("-f", "--file", help="send file(s)",
+                        nargs="+", type=argparse.FileType("rb"))
+    parser.add_argument("-i", "--image", help="send image(s)",
+                        nargs="+", type=argparse.FileType("rb"))
+    parser.add_argument("-s", "--sticker", help="send stickers(s)",
+                        nargs="+", type=argparse.FileType("rb"))
+    parser.add_argument("--animation", help="send animation(s) (GIF or soundless H.264/MPEG-4 AVC video)",
+                        nargs="+", type=argparse.FileType("rb"))
+    parser.add_argument("--video", help="send video(s)",
+                        nargs="+", type=argparse.FileType("rb"))
+    parser.add_argument("--audio", help="send audio(s)",
+                        nargs="+", type=argparse.FileType("rb"))
+    parser.add_argument(
+        "-l", "--location", help="send location(s) via latitude and longitude (separated by whitespace or a comma)", nargs="+")
     parser.add_argument("--caption", help="caption for image(s)", nargs="+")
-    parser.add_argument("--config", help="specify configuration file", type=str, dest="conf", action="append")
-    parser.add_argument("-g", "--global-config", help="Use the global configuration at /etc/telegram-send.conf", action="store_true")
-    parser.add_argument("--file-manager", help="Integrate %(prog)s in the file manager", action="store_true")
-    parser.add_argument("--clean", help="Clean %(prog)s configuration files.", action="store_true")
-    parser.add_argument("--timeout", help="Set the read timeout for network operations. (in seconds)", type=float, default=30.)
-    parser.add_argument("--version", action="version", version="%(prog)s {}".format(__version__))
+    parser.add_argument("--config", help="specify configuration file",
+                        type=str, dest="conf", action="append")
+    parser.add_argument("-g", "--global-config",
+                        help="Use the global configuration at /etc/telegram-send.conf", action="store_true")
+    parser.add_argument(
+        "--file-manager", help="Integrate %(prog)s in the file manager", action="store_true")
+    parser.add_argument(
+        "--clean", help="Clean %(prog)s configuration files.", action="store_true")
+    parser.add_argument(
+        "--timeout", help="Set the read timeout for network operations. (in seconds)", type=float, default=30.)
+    parser.add_argument("--version", action="version",
+                        version="%(prog)s {}".format(__version__))
     args = parser.parse_args()
 
     if args.global_config:
@@ -104,7 +125,8 @@ def main():
         if args.pre:
             message = pre(message)
         for c in conf:
-            send(messages=[message], conf=c, parse_mode=args.parse_mode, silent=args.silent, disable_web_page_preview=args.disable_web_page_preview)
+            send(messages=[message], conf=c, parse_mode=args.parse_mode,
+                 silent=args.silent, disable_web_page_preview=args.disable_web_page_preview)
 
     try:
         if args.pre:
@@ -186,12 +208,15 @@ def send(*,
     config = configparser.ConfigParser()
     if not config.read(conf) or not config.has_section("telegram"):
         raise ConfigError("Config not found")
-    missing_options = set(["token", "chat_id"]) - set(config.options("telegram"))
+    missing_options = set(["token", "chat_id"]) - \
+        set(config.options("telegram"))
     if len(missing_options) > 0:
-        raise ConfigError("Missing options in config: {}".format(", ".join(missing_options)))
+        raise ConfigError("Missing options in config: {}".format(
+            ", ".join(missing_options)))
     config = config["telegram"]
     token = config["token"]
-    chat_id = int(config["chat_id"]) if config["chat_id"].isdigit() else config["chat_id"]
+    chat_id = int(config["chat_id"]) if config["chat_id"].isdigit(
+    ) else config["chat_id"]
     request = telegram.utils.request.Request(read_timeout=timeout)
     bot = telegram.Bot(token, request=request)
 
@@ -208,7 +233,8 @@ def send(*,
 
         for m in messages:
             if len(m) > MAX_MESSAGE_LENGTH:
-                warn(markup("Message longer than MAX_MESSAGE_LENGTH=%d, splitting into smaller messages." % MAX_MESSAGE_LENGTH, "red"))
+                warn(markup("Message longer than MAX_MESSAGE_LENGTH=%d, splitting into smaller messages." %
+                            MAX_MESSAGE_LENGTH, "red"))
                 ms = split_message(m, MAX_MESSAGE_LENGTH)
                 for m in ms:
                     send_message(m)
@@ -218,52 +244,64 @@ def send(*,
                 send_message(m)
 
     def make_captions(items, captions):
-        captions += [None] * (len(items) - len(captions))  # make captions equal length when not all images/files have captions
+        # make captions equal length when not all images/files have captions
+        captions += [None] * (len(items) - len(captions))
         return zip(items, captions)
 
     if files:
         if captions:
             for (f, c) in make_captions(files, captions):
-                bot.send_document(chat_id=chat_id, document=f, caption=c, disable_notification=silent)
+                bot.send_document(chat_id=chat_id, document=f,
+                                  caption=c, disable_notification=silent)
         else:
             for f in files:
-                bot.send_document(chat_id=chat_id, document=f, disable_notification=silent)
+                bot.send_document(chat_id=chat_id, document=f,
+                                  disable_notification=silent)
 
     if images:
         if captions:
             for (i, c) in make_captions(images, captions):
-                bot.send_photo(chat_id=chat_id, photo=i, caption=c, disable_notification=silent)
+                bot.send_photo(chat_id=chat_id, photo=i,
+                               caption=c, disable_notification=silent)
         else:
             for i in images:
-                bot.send_photo(chat_id=chat_id, photo=i, disable_notification=silent)
+                bot.send_photo(chat_id=chat_id, photo=i,
+                               disable_notification=silent)
 
     if stickers:
         for i in stickers:
-            bot.send_sticker(chat_id=chat_id, sticker=i, disable_notification=silent)
+            bot.send_sticker(chat_id=chat_id, sticker=i,
+                             disable_notification=silent)
 
     if animations:
         if captions:
             for (a, c) in make_captions(animations, captions):
-                bot.send_animation(chat_id=chat_id, animation=a, caption=c, disable_notification=silent)
+                bot.send_animation(chat_id=chat_id, animation=a,
+                                   caption=c, disable_notification=silent)
         else:
             for a in animations:
-                bot.send_animation(chat_id=chat_id, animation=a, disable_notification=silent)
+                bot.send_animation(chat_id=chat_id, animation=a,
+                                   disable_notification=silent)
 
     if videos:
         if captions:
             for (v, c) in make_captions(videos, captions):
-                bot.send_video(chat_id=chat_id, video=v, caption=c, disable_notification=silent)
+                bot.send_video(chat_id=chat_id, video=v,
+                               caption=c, disable_notification=silent)
         else:
             for v in videos:
-                bot.send_video(chat_id=chat_id, video=v, disable_notification=silent)
+                bot.send_video(chat_id=chat_id, video=v,
+                               disable_notification=silent)
 
     if audios:
         if captions:
             for (a, c) in make_captions(audios, captions):
-                bot.send_audio(chat_id=chat_id, audio=a, caption=c, disable_notification=silent)
+                bot.send_audio(chat_id=chat_id, audio=a,
+                               caption=c, disable_notification=silent)
         else:
             for a in audios:
-                bot.send_audio(chat_id=chat_id, audio=a, disable_notification=silent)
+                bot.send_audio(chat_id=chat_id, audio=a,
+                               disable_notification=silent)
 
     if locations:
         it = iter(locations)
@@ -273,7 +311,8 @@ def send(*,
             else:
                 lat = loc
                 lon = next(it)
-            bot.send_location(chat_id=chat_id, latitude=float(lat), longitude=float(lon), disable_notification=silent)
+            bot.send_location(chat_id=chat_id, latitude=float(
+                lat), longitude=float(lon), disable_notification=silent)
 
 
 def configure(conf, channel=False, group=False, fm_integration=False):
@@ -326,7 +365,8 @@ def configure(conf, channel=False, group=False, fm_integration=False):
             print("\nOpen https://web.telegram.org in your browser, sign in and open your private channel."
                   "\nNow copy the URL in the address bar and enter it here:")
             url = input(markup(prompt, "magenta")).strip()
-            chat_id = "-100" + re.match(".+web\.telegram\.org\/#\/im\?p=c(\d+)", url).group(1)
+            chat_id = "-100" + \
+                re.match(".+web\.telegram\.org\/#\/im\?p=c(\d+)", url).group(1)
 
         authorized = False
         while not authorized:
@@ -337,7 +377,8 @@ def configure(conf, channel=False, group=False, fm_integration=False):
                 # Telegram returns a BadRequest when a non-admin bot tries to send to a private channel
                 input("Please add {} as administrator to your channel and press Enter"
                       .format(markup(bot_name, "cyan")))
-        print(markup("\nCongratulations! telegram-send can now post to your channel!", "green"))
+        print(markup(
+            "\nCongratulations! telegram-send can now post to your channel!", "green"))
     else:
         password = "".join([str(randint(0, 9)) for _ in range(5)])
         bot_url = contact_url + bot_name
@@ -371,7 +412,8 @@ def configure(conf, channel=False, group=False, fm_integration=False):
 
         chat_id = update.message.chat_id
         user = update.message.from_user.username or update.message.from_user.first_name
-        m = ("Congratulations {}! ".format(user), "\ntelegram-send is now ready for use!")
+        m = ("Congratulations {}! ".format(user),
+             "\ntelegram-send is now ready for use!")
         ball = "🎊"
         print(markup("".join(m), "green"))
         bot.send_message(chat_id=chat_id, text=ball + " " + m[0] + ball + m[1])
@@ -406,8 +448,10 @@ def integrate_file_manager(clean=False):
 echo "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | sed 's/ /\\\\ /g' | xargs telegram-send -f
 """
     file_managers = [
-        ("thunar", "~/.local/share/Thunar/sendto/", "Desktop Entry", "Telegram", ".desktop"),
-        ("nemo", "~/.local/share/nemo/actions/", "Nemo Action", "Send to Telegram", ".nemo_action"),
+        ("thunar", "~/.local/share/Thunar/sendto/",
+         "Desktop Entry", "Telegram", ".desktop"),
+        ("nemo", "~/.local/share/nemo/actions/",
+         "Nemo Action", "Send to Telegram", ".nemo_action"),
         ("nautilus", "~/.local/share/nautilus/scripts/", "script", "", ""),
     ]
     for (fm, loc, section, label, ext) in file_managers:
@@ -454,7 +498,8 @@ def markup(text, style):
 
 def pre(text):
     if "```" in text:
-        print(markup("Sending a message containing ``` is not supported with --pre.", "red"))
+        print(
+            markup("Sending a message containing ``` is not supported with --pre.", "red"))
         sys.exit(1)
     return "```text\n" + text + "```"
 
