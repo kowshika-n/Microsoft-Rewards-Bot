@@ -28,9 +28,8 @@ from warnings import warn
 
 import colorama
 import telegram
-from telegram.constants import MAX_MESSAGE_LENGTH
 from appdirs import AppDirs
-
+from telegram.constants import MAX_MESSAGE_LENGTH
 from version import __version__
 
 try:

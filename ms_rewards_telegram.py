@@ -6,7 +6,6 @@
 # FIXME mobile version does not require re-sign in, but pc version does, why?
 # FIXME Known Cosmetic Issue - logged point total caps out at the point cost of the item on wishlist
 
-import telegram_send
 import argparse
 import json
 import logging
@@ -15,21 +14,19 @@ import platform
 import random
 import time
 import zipfile
-import os
 from datetime import datetime, timedelta
 
 import requests
+import telegram_send
 from requests.exceptions import RequestException
 from selenium import webdriver
-from selenium.common.exceptions import (
-    WebDriverException,
-    TimeoutException,
-    ElementClickInterceptedException,
-    ElementNotVisibleException,
-    ElementNotInteractableException,
-    NoSuchElementException,
-    UnexpectedAlertPresentException,
-)
+from selenium.common.exceptions import (ElementClickInterceptedException,
+                                        ElementNotInteractableException,
+                                        ElementNotVisibleException,
+                                        NoSuchElementException,
+                                        TimeoutException,
+                                        UnexpectedAlertPresentException,
+                                        WebDriverException)
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
