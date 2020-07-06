@@ -19,8 +19,12 @@ import argparse
 import configparser
 import re
 import sys
-from os import makedirs, remove
-from os.path import dirname, exists, expanduser, join
+from os import makedirs
+from os import remove
+from os.path import dirname
+from os.path import exists
+from os.path import expanduser
+from os.path import join
 from random import randint
 from shutil import which
 from subprocess import check_output
