@@ -7,7 +7,8 @@ from bs4 import BeautifulSoup
 rssRedditURL = "https://www.reddit.com/r/MicrosoftRewards/search.rss?sort=new&restrict_sr=on&q=flair%3AMail%2BPoints"
 
 headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36"
+    "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36"
 }
 
 xmlData = requests.get(rssRedditURL, headers=headers).text
@@ -23,7 +24,7 @@ os.remove("tempFileDelete.txt")
 linkList = []
 
 for content in root.findall(
-    "{http://www.w3.org/2005/Atom}entry/{http://www.w3.org/2005/Atom}content"
+        "{http://www.w3.org/2005/Atom}entry/{http://www.w3.org/2005/Atom}content"
 ):
     soup = BeautifulSoup(content.text, "lxml")
     for link in soup.findAll("a"):

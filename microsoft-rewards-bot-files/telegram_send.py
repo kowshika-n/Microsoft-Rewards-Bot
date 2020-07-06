@@ -58,9 +58,12 @@ def main():
         default="text",
         dest="parse_mode",
         choices=["text", "markdown", "html"],
-        help="How to format the message(s). Choose from 'text', 'markdown', or 'html'",
+        help=
+        "How to format the message(s). Choose from 'text', 'markdown', or 'html'",
     )
-    parser.add_argument("--stdin", help="Send text from stdin.", action="store_true")
+    parser.add_argument("--stdin",
+                        help="Send text from stdin.",
+                        action="store_true")
     parser.add_argument(
         "--pre",
         help="Send preformatted fixed-width (monospace) text.",
@@ -76,23 +79,28 @@ def main():
         help="send silently, user will receive a notification without sound",
         action="store_true",
     )
-    parser.add_argument(
-        "-c", "--configure", help="configure %(prog)s", action="store_true"
-    )
+    parser.add_argument("-c",
+                        "--configure",
+                        help="configure %(prog)s",
+                        action="store_true")
     parser.add_argument(
         "--configure-channel",
         help="configure %(prog)s for a channel",
         action="store_true",
     )
-    parser.add_argument(
-        "--configure-group", help="configure %(prog)s for a group", action="store_true"
-    )
-    parser.add_argument(
-        "-f", "--file", help="send file(s)", nargs="+", type=argparse.FileType("rb")
-    )
-    parser.add_argument(
-        "-i", "--image", help="send image(s)", nargs="+", type=argparse.FileType("rb")
-    )
+    parser.add_argument("--configure-group",
+                        help="configure %(prog)s for a group",
+                        action="store_true")
+    parser.add_argument("-f",
+                        "--file",
+                        help="send file(s)",
+                        nargs="+",
+                        type=argparse.FileType("rb"))
+    parser.add_argument("-i",
+                        "--image",
+                        help="send image(s)",
+                        nargs="+",
+                        type=argparse.FileType("rb"))
     parser.add_argument(
         "-s",
         "--sticker",
@@ -106,16 +114,19 @@ def main():
         nargs="+",
         type=argparse.FileType("rb"),
     )
-    parser.add_argument(
-        "--video", help="send video(s)", nargs="+", type=argparse.FileType("rb")
-    )
-    parser.add_argument(
-        "--audio", help="send audio(s)", nargs="+", type=argparse.FileType("rb")
-    )
+    parser.add_argument("--video",
+                        help="send video(s)",
+                        nargs="+",
+                        type=argparse.FileType("rb"))
+    parser.add_argument("--audio",
+                        help="send audio(s)",
+                        nargs="+",
+                        type=argparse.FileType("rb"))
     parser.add_argument(
         "-l",
         "--location",
-        help="send location(s) via latitude and longitude (separated by whitespace or a comma)",
+        help=
+        "send location(s) via latitude and longitude (separated by whitespace or a comma)",
         nargs="+",
     )
     parser.add_argument("--caption", help="caption for image(s)", nargs="+")
@@ -137,18 +148,18 @@ def main():
         help="Integrate %(prog)s in the file manager",
         action="store_true",
     )
-    parser.add_argument(
-        "--clean", help="Clean %(prog)s configuration files.", action="store_true"
-    )
+    parser.add_argument("--clean",
+                        help="Clean %(prog)s configuration files.",
+                        action="store_true")
     parser.add_argument(
         "--timeout",
         help="Set the read timeout for network operations. (in seconds)",
         type=float,
         default=30.0,
     )
-    parser.add_argument(
-        "--version", action="version", version="%(prog)s {}".format(__version__)
-    )
+    parser.add_argument("--version",
+                        action="version",
+                        version="%(prog)s {}".format(__version__))
     args = parser.parse_args()
 
     if args.global_config:
@@ -168,7 +179,9 @@ def main():
         if not sys.platform.startswith("win32"):
             return integrate_file_manager()
         else:
-            print(markup("File manager integration is unavailable on Windows.", "red"))
+            print(
+                markup("File manager integration is unavailable on Windows.",
+                       "red"))
             sys.exit(1)
     elif args.clean:
         return clean()
@@ -221,33 +234,29 @@ def main():
     except telegram.error.NetworkError as e:
         if "timed out" in str(e).lower():
             print(markup("Error: Connection timed out", "red"))
-            print(
-                "Please run with a longer timeout.\n"
-                "Try with the option: "
-                + markup("--timeout {}".format(args.timeout + 10), "bold")
-            )
+            print("Please run with a longer timeout.\n"
+                  "Try with the option: " +
+                  markup("--timeout {}".format(args.timeout + 10), "bold"))
             sys.exit(1)
         else:
             raise (e)
 
 
-def send(
-    *,
-    messages=None,
-    files=None,
-    images=None,
-    stickers=None,
-    animations=None,
-    videos=None,
-    audios=None,
-    captions=None,
-    locations=None,
-    conf=None,
-    parse_mode=None,
-    silent=False,
-    disable_web_page_preview=False,
-    timeout=30
-):
+def send(*,
+         messages=None,
+         files=None,
+         images=None,
+         stickers=None,
+         animations=None,
+         videos=None,
+         audios=None,
+         captions=None,
+         locations=None,
+         conf=None,
+         parse_mode=None,
+         silent=False,
+         disable_web_page_preview=False,
+         timeout=30):
     """Send data over Telegram. All arguments are optional.
 
     Always use this function with explicit keyword arguments. So
@@ -287,16 +296,15 @@ def send(
     config = configparser.ConfigParser()
     if not config.read(conf) or not config.has_section("telegram"):
         raise ConfigError("Config not found")
-    missing_options = set(["token", "chat_id"]) - set(config.options("telegram"))
+    missing_options = set(["token", "chat_id"]) - set(
+        config.options("telegram"))
     if len(missing_options) > 0:
-        raise ConfigError(
-            "Missing options in config: {}".format(", ".join(missing_options))
-        )
+        raise ConfigError("Missing options in config: {}".format(
+            ", ".join(missing_options)))
     config = config["telegram"]
     token = config["token"]
-    chat_id = (
-        int(config["chat_id"]) if config["chat_id"].isdigit() else config["chat_id"]
-    )
+    chat_id = (int(config["chat_id"])
+               if config["chat_id"].isdigit() else config["chat_id"])
     request = telegram.utils.request.Request(read_timeout=timeout)
     bot = telegram.Bot(token, request=request)
 
@@ -325,8 +333,7 @@ def send(
                         "Message longer than MAX_MESSAGE_LENGTH=%d, splitting into smaller messages."
                         % MAX_MESSAGE_LENGTH,
                         "red",
-                    )
-                )
+                    ))
                 ms = split_message(m, MAX_MESSAGE_LENGTH)
                 for m in ms:
                     send_message(m)
@@ -343,60 +350,73 @@ def send(
     if files:
         if captions:
             for (f, c) in make_captions(files, captions):
-                bot.send_document(
-                    chat_id=chat_id, document=f, caption=c, disable_notification=silent
-                )
+                bot.send_document(chat_id=chat_id,
+                                  document=f,
+                                  caption=c,
+                                  disable_notification=silent)
         else:
             for f in files:
-                bot.send_document(
-                    chat_id=chat_id, document=f, disable_notification=silent
-                )
+                bot.send_document(chat_id=chat_id,
+                                  document=f,
+                                  disable_notification=silent)
 
     if images:
         if captions:
             for (i, c) in make_captions(images, captions):
-                bot.send_photo(
-                    chat_id=chat_id, photo=i, caption=c, disable_notification=silent
-                )
+                bot.send_photo(chat_id=chat_id,
+                               photo=i,
+                               caption=c,
+                               disable_notification=silent)
         else:
             for i in images:
-                bot.send_photo(chat_id=chat_id, photo=i, disable_notification=silent)
+                bot.send_photo(chat_id=chat_id,
+                               photo=i,
+                               disable_notification=silent)
 
     if stickers:
         for i in stickers:
-            bot.send_sticker(chat_id=chat_id, sticker=i, disable_notification=silent)
+            bot.send_sticker(chat_id=chat_id,
+                             sticker=i,
+                             disable_notification=silent)
 
     if animations:
         if captions:
             for (a, c) in make_captions(animations, captions):
-                bot.send_animation(
-                    chat_id=chat_id, animation=a, caption=c, disable_notification=silent
-                )
+                bot.send_animation(chat_id=chat_id,
+                                   animation=a,
+                                   caption=c,
+                                   disable_notification=silent)
         else:
             for a in animations:
-                bot.send_animation(
-                    chat_id=chat_id, animation=a, disable_notification=silent
-                )
+                bot.send_animation(chat_id=chat_id,
+                                   animation=a,
+                                   disable_notification=silent)
 
     if videos:
         if captions:
             for (v, c) in make_captions(videos, captions):
-                bot.send_video(
-                    chat_id=chat_id, video=v, caption=c, disable_notification=silent
-                )
+                bot.send_video(chat_id=chat_id,
+                               video=v,
+                               caption=c,
+                               disable_notification=silent)
         else:
             for v in videos:
-                bot.send_video(chat_id=chat_id, video=v, disable_notification=silent)
+                bot.send_video(chat_id=chat_id,
+                               video=v,
+                               disable_notification=silent)
 
     if audios:
         if captions:
             for (a, c) in make_captions(audios, captions):
-                bot.send_audio(
-                    chat_id=chat_id, audio=a, caption=c, disable_notification=silent
-                )
+                bot.send_audio(chat_id=chat_id,
+                               audio=a,
+                               caption=c,
+                               disable_notification=silent)
         else:
             for a in audios:
-                bot.send_audio(chat_id=chat_id, audio=a, disable_notification=silent)
+                bot.send_audio(chat_id=chat_id,
+                               audio=a,
+                               disable_notification=silent)
 
     if locations:
         it = iter(locations)
@@ -430,10 +450,8 @@ def configure(conf, channel=False, group=False, fm_integration=False):
     contact_url = "https://telegram.me/"
 
     print(
-        "Talk with the {} on Telegram ({}), create a bot and insert the token".format(
-            markup("BotFather", "cyan"), contact_url + "BotFather"
-        )
-    )
+        "Talk with the {} on Telegram ({}), create a bot and insert the token".
+        format(markup("BotFather", "cyan"), contact_url + "BotFather"))
     try:
         token = input(markup(prompt, "magenta")).strip()
     except UnicodeEncodeError:
@@ -451,11 +469,8 @@ def configure(conf, channel=False, group=False, fm_integration=False):
     print("Connected with {}.\n".format(markup(bot_name, "cyan")))
 
     if channel:
-        print(
-            "Do you want to send to a {} or a {} channel? [pub/priv]".format(
-                markup("public", "bold"), markup("private", "bold")
-            )
-        )
+        print("Do you want to send to a {} or a {} channel? [pub/priv]".format(
+            markup("public", "bold"), markup("private", "bold")))
         channel_type = input(markup(prompt, "magenta")).strip()
         if channel_type.startswith("pub"):
             print("\nEnter your channel's public name or link:")
@@ -469,12 +484,10 @@ def configure(conf, channel=False, group=False, fm_integration=False):
         else:
             print(
                 "\nOpen https://web.telegram.org in your browser, sign in and open your private channel."
-                "\nNow copy the URL in the address bar and enter it here:"
-            )
+                "\nNow copy the URL in the address bar and enter it here:")
             url = input(markup(prompt, "magenta")).strip()
             chat_id = "-100" + re.match(
-                ".+web\.telegram\.org\/#\/im\?p=c(\d+)", url
-            ).group(1)
+                ".+web\.telegram\.org\/#\/im\?p=c(\d+)", url).group(1)
 
         authorized = False
         while not authorized:
@@ -484,16 +497,13 @@ def configure(conf, channel=False, group=False, fm_integration=False):
             except (telegram.error.Unauthorized, telegram.error.BadRequest):
                 # Telegram returns a BadRequest when a non-admin bot tries to send to a private channel
                 input(
-                    "Please add {} as administrator to your channel and press Enter".format(
-                        markup(bot_name, "cyan")
-                    )
-                )
+                    "Please add {} as administrator to your channel and press Enter"
+                    .format(markup(bot_name, "cyan")))
         print(
             markup(
                 "\nCongratulations! telegram-send can now post to your channel!",
                 "green",
-            )
-        )
+            ))
     else:
         password = "".join([str(randint(0, 9)) for _ in range(5)])
         bot_url = contact_url + bot_name
@@ -501,16 +511,12 @@ def configure(conf, channel=False, group=False, fm_integration=False):
         if group:
             password = "/{}@{}".format(password, bot_name)
             print(
-                "Please add {} to your group\nand send the following message to the group: {}\n".format(
-                    fancy_bot_name, markup(password, "bold")
-                )
-            )
+                "Please add {} to your group\nand send the following message to the group: {}\n"
+                .format(fancy_bot_name, markup(password, "bold")))
         else:
             print(
-                "Please add {} on Telegram ({})\nand send it the password: {}\n".format(
-                    fancy_bot_name, bot_url, markup(password, "bold")
-                )
-            )
+                "Please add {} on Telegram ({})\nand send it the password: {}\n"
+                .format(fancy_bot_name, bot_url, markup(password, "bold")))
 
         update, update_id = None, None
 
@@ -554,18 +560,16 @@ def configure(conf, channel=False, group=False, fm_integration=False):
 
 
 def integrate_file_manager(clean=False):
-    desktop = (
-        "[{}]\n"
-        "Version=1.0\n"
-        "Type=Application\n"
-        "Encoding=UTF-8\n"
-        "Exec=telegram-send --file %F\n"
-        "Icon=telegram\n"
-        "Name={}\n"
-        "Selection=any\n"
-        "Extensions=nodirs;\n"
-        "Quote=double\n"
-    )
+    desktop = ("[{}]\n"
+               "Version=1.0\n"
+               "Type=Application\n"
+               "Encoding=UTF-8\n"
+               "Exec=telegram-send --file %F\n"
+               "Icon=telegram\n"
+               "Name={}\n"
+               "Selection=any\n"
+               "Extensions=nodirs;\n"
+               "Quote=double\n")
     name = "telegram-send"
     script = """#!/bin/sh
 echo "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | sed 's/ /\\\\ /g' | xargs telegram-send -f
@@ -615,7 +619,8 @@ def clean():
             remove(global_config)
         except PermissionError:
             print(markup("Can't delete /etc/telegram-send.conf", "red"))
-            print("Please run: " + markup("sudo telegram-send --clean", "bold"))
+            print("Please run: " +
+                  markup("sudo telegram-send --clean", "bold"))
             sys.exit(1)
 
 
@@ -638,9 +643,8 @@ def pre(text):
     if "```" in text:
         print(
             markup(
-                "Sending a message containing ``` is not supported with --pre.", "red"
-            )
-        )
+                "Sending a message containing ``` is not supported with --pre.",
+                "red"))
         sys.exit(1)
     return "```text\n" + text + "```"
 
