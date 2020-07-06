@@ -191,6 +191,7 @@ def get_search_terms():
             logging.error('Cannot parse, JSON keys are modified.')
     # get unique terms and return a list
     logging.info(msg=f'# of search items: {len(search_terms)}\n')
+    telegram_send.send(messages=[f'# of search items: {len(search_terms)}\n'])
     return list(set(search_terms))
 
 
@@ -274,9 +275,9 @@ def browser_setup(headless_mode, user_agent):
 
 
 def log_in(email_address, pass_word):
-    telegram_send.send(messages=["Folgender Account wird eingeloggt"])
     telegram_send.send(messages=[f'Logging in {email_address}...'])
     logging.info(msg=f'Logging in {email_address}...')
+    telegram_send.send(messages=[f'Logging in {email_address}...'])
     browser.get('https://login.live.com/')
     time.sleep(0.5)
     # wait for login form and enter email
@@ -516,7 +517,10 @@ def screenshot(selector):
     :return: None
     """
     logging.exception(msg=f'{selector} cannot be located.')
+    telegram_send.send(messages=[f'{selector} cannot be located.'])
     screenshot_file_name = f'{datetime.now().strftime("%Y%m%d%%H%M%S")}_{selector}.png'
+    telegram_send.send(images=[f'{datetime.now().strftime("%Y%m%d%%H%M%S")}_{selector}.png'])
+    screenshot_file_path = os.path.join('logs', screenshot_file_name)
     screenshot_file_path = os.path.join('logs', screenshot_file_name)
     browser.save_screenshot(screenshot_file_path)
 
@@ -546,8 +550,10 @@ def search(search_terms, mobile_search=False):
         search_terms = list(enumerate(search_terms, start=0))
 
     logging.info(msg="Search Start")
+    telegram_send.send(messages=["Search Start"])
     if search_terms == [] or search_terms is None:
         logging.info(msg="Search Aborted. No Search Terms.")
+        telegram_send.send(messages=["Search Aborted. No Search Terms."])
     else:
         browser.get(BING_SEARCH_URL)
         # ensure signed in not in mobile mode (pc mode doesn't register when searching)
@@ -573,12 +579,14 @@ def search(search_terms, mobile_search=False):
                         # in mobile mode, get point total does not work if no search is done, URL = 404
                         if get_point_total(mobile=True):
                             logging.info(msg=f'Stopped at search number {num}')
+                            telegram_send.send(messages=[f'Stopped at search number {num}'])
                             return
                         # if point total not met, return to search page
                         browser.get(BING_SEARCH_URL)
                     else:
                         if get_point_total(pc=True):
                             logging.info(msg=f'Stopped at search number {num}')
+                            telegram_send.send(messages=[f'Stopped at search number {num}'])
                             return
                         browser.get(BING_SEARCH_URL)
             except UnexpectedAlertPresentException:
@@ -596,6 +604,7 @@ def iter_dailies():
     open_offers = browser.find_elements_by_xpath('//span[contains(@class, "mee-icon-AddMedium")]')
     if open_offers:
         logging.info(msg=f'Number of open offers: {len(open_offers)}')
+        telegram_send.send(messages=[f'Number of open offers: {len(open_offers)}'])
         # get common parent element of open_offers
         parent_elements = [open_offer.find_element_by_xpath('..//..//..//..') for open_offer in open_offers]
         # get points links from parent, # finds link (a) descendant of selected node
@@ -644,8 +653,10 @@ def iter_dailies():
         wait_until_visible(By.TAG_NAME, 'body', 10)  # checks for page load
         open_offers = browser.find_elements_by_xpath('//span[contains(@class, "mee-icon-AddMedium")]')
         logging.info(msg=f'Number of incomplete offers remaining: {len(open_offers)}')
+        telegram_send.send(messages=[f'Number of incomplete offers remaining: {len(open_offers)}'])
     else:
         logging.info(msg='No dailies found.')
+        telegram_send.send(messages=['No dailies found.'])
 
 
 def explore_daily():
@@ -770,8 +781,10 @@ def sign_in_prompt():
     sign_in_prompt_msg = find_by_class('simpleSignIn')
     if sign_in_prompt_msg:
         logging.info(msg='Detected sign-in prompt')
+        telegram_send.send(messages=['Detected sign-in prompt'])
         browser.find_element_by_link_text('Sign in').click()
         logging.info(msg='Clicked sign-in prompt')
+        telegram_send.send(messages=['Clicked sign-in prompt'])
         time.sleep(2)
 
 
@@ -811,9 +824,12 @@ def get_point_total(pc=True, mobile=True, log=True):
     # if log flag is provided, log the point totals
     if log:
         logging.info(msg=f'Total points = {current_point_total}')
+        telegram_send.send(messages=[f'Total points = {current_point_total}'])
         logging.info(msg=f'PC points = {current_pc_points}/{max_pc_points}')
+        telegram_send.send(messages=[f'PC points = {current_pc_points}/{max_pc_points}'])
         # logging.info(msg=f'Edge points = {current_edge_points}/{max_edge_points}')
         logging.info(msg=f'Mobile points = {current_mobile_points}/{max_mobile_points}')
+        telegram_send.send(messages=[f'Mobile points = {current_mobile_points}/{max_mobile_points}'])
 
     # if pc flag, check if pc and edge points met
     if pc:
@@ -867,10 +883,10 @@ def ensure_pc_mode_logged_in():
 
 
 if __name__ == '__main__':
-    telegram_send.send(messages=["Microsoft Reward Bot gestartet"])
-    telegram_send.send(messages=["Überprüfe Python Version!"])
+    telegram_send.send(messages=["Microsoft Reward Bot Start"])
     check_python_version()
-    telegram_send.send(messages=["Lade Chrome"])
+    telegram_send.send(messages=["Check Python Version"])
+    telegram_send.send(messages=["Check Chrome"])
     if os.path.exists("drivers/chromedriver.exe"):
         update_driver()
     try:
@@ -878,17 +894,20 @@ if __name__ == '__main__':
         parser = parse_args()
 
         # start logging
-        telegram_send.send(messages=["Erstelle LOG-FIles"])
+        
         init_logging(log_level=parser.log_level)
         logging.info(msg='--------------------------------------------------')
+        telegram_send.send(messages=['--------------------------------------------------'])
         logging.info(msg='-----------------------New------------------------')
+        telegram_send.send(messages=['-----------------------New------------------------'])
         logging.info(msg='--------------------------------------------------')
+        telegram_send.send(messages=['--------------------------------------------------'])
 
         # get login dict
-        telegram_send.send(messages=["Rufe Login Informationen ab"])
         login_dict = get_login_info()
         logging.info(msg='logins retrieved.')
-        telegram_send.send(messages=["Logins erhalten"])
+        telegram_send.send(messages=['logins retrieved.'])
+        
 
         # get search terms
         search_list = []
@@ -910,6 +929,7 @@ if __name__ == '__main__':
             if parser.mobile_mode:
                 # MOBILE MODE
                 logging.info(msg='-------------------------MOBILE-------------------------')
+                telegram_send.send(messages=['-------------------------MOBILE-------------------------'])
                 # set up headless browser and mobile user agent
                 browser = browser_setup(parser.headless_setting, MOBILE_USER_AGENT)
                 try:
@@ -922,6 +942,7 @@ if __name__ == '__main__':
                         main_window()
                     except:
                         logging.info(msg=f'Mobile App Task not found')
+                        telegram_send.send(messages=[f'Mobile App Task not found'])
                     time.sleep(1)
                     browser.get(BING_SEARCH_URL)
                     # mobile search
@@ -934,11 +955,13 @@ if __name__ == '__main__':
                     browser.quit()
                 except WebDriverException:
                     logging.info(msg=f'WebDriverException while executing mobile portion', exc_info=True)
+                    telegram_send.send(messages=[f'WebDriverException while executing mobile portion'], exc_info=True)
                     browser.quit()
 
             if parser.pc_mode or parser.quiz_mode or parser.email_mode:
                 # PC MODE
                 logging.info(msg='-------------------------PC-------------------------')
+                telegram_send.send(messages=['-------------------------PC-------------------------'])
                 # set up edge headless browser and edge pc user agent
                 browser = browser_setup(parser.headless_setting, PC_USER_AGENT)
                 try:
