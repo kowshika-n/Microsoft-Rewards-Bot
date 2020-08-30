@@ -1,6 +1,6 @@
 #! /usr/lib/python3.6
 # ms_rewards.py - Searches for results via pc bing browser and mobile, completes quizzes on pc bing browser
-# Version 2019.07.13
+# Version 2020.08.30
 
 # TODO replace sleeps with minimum sleeps for explicit waits to work, especially after a page redirect
 # FIXME mobile version does not require re-sign in, but pc version does, why?
@@ -293,9 +293,13 @@ def log_in(email_address, pass_word):
         # wait for 'sign in' button to be clickable and sign in
         time.sleep(0.5)
         send_key_by_name('passwd', Keys.RETURN)
-        time.sleep(0.5)
         # Passwords only require the standard delay
-        wait_until_visible(By.ID, 'uhfLogo', 10)
+        time.sleep(0.5)
+        # Added wait to click Yes to Stay signed in
+        wait_until_clickable(By.XPATH, "//input[@type='submit']", 10)
+        if find_by_xpath("//input[@type='submit']"):
+            click_by_xpath("//input[@type='submit']")
+        wait_until_visible(By.XPATH, '//*[@id="uhfLogo" or @id="microsoft"]', 30)
     else:
         # If using mobile 2FA, add a longer delay for sign in approval
         wait_until_visible(By.ID, 'uhfLogo', 300)
@@ -445,6 +449,23 @@ def send_key_by_id(obj_id, key):
         logging.exception(msg=f'Webdriver Error for send key by ID to {obj_id} object')
 
 
+def scrollToBottom(browser):
+    """Scroll to bottom of the page"""
+    try:
+        browser.execute_script("scrollBy(0,250);")
+        browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    except Exception as e:
+        print('Exception when scrolling : %s' % e)
+
+
+def scrollToTop(driver):
+    """Scroll to top of the page"""
+    try:
+        browser.find_element_by_tag_name('body').send_keys(Keys.HOME)
+    except Exception as e:
+        print('Exception when scrolling : %s' % e)
+
+
 def click_by_class(selector):
     """
     Clicks on node object selected by class name
@@ -471,6 +492,20 @@ def click_by_id(obj_id):
         logging.exception(msg=f'Click by ID to {obj_id} element not visible or clickable.')
     except WebDriverException:
         logging.exception(msg=f'Webdriver Error for click by ID to {obj_id} object')
+
+
+def click_by_xpath(xpath):
+    """
+    Clicks on object located by XPATH
+    :param xpath: xpath tag of html object
+    :return: None
+    """
+    try:
+        browser.find_element_by_xpath(xpath).click()
+    except (ElementNotVisibleException, ElementClickInterceptedException, ElementNotInteractableException):
+        logging.exception(msg=f'Click by xpath to {xpath} element not visible or clickable.')
+    except WebDriverException:
+        logging.exception(msg=f'Webdriver Error for click by xpath to {xpath} object')
 
 
 def clear_by_id(obj_id):
@@ -543,7 +578,7 @@ def search(search_terms, mobile_search=False):
         search_terms = list(enumerate(search_terms, start=0))
 
     logging.info(msg="Search Start")
-    if search_terms == [] or search_terms is None:
+    if search_terms is None or search_terms == []:
         logging.info(msg="Search Aborted. No Search Terms.")
     else:
         browser.get(BING_SEARCH_URL)
@@ -554,16 +589,23 @@ def search(search_terms, mobile_search=False):
         for num, item in search_terms:
             try:
                 # clears search bar and enters in next search term
+                logging.info(msg=f'Searching #{num} : {item}')
                 time.sleep(1)
                 wait_until_visible(By.ID, 'sb_form_q', 15)
+                click_by_id('sb_form_q')
                 clear_by_id('sb_form_q')
-                send_key_by_id('sb_form_q', item)
-                time.sleep(0.1)
+                time.sleep(2)
+                ActionTypeSlow(browser, By.ID, 'sb_form_q', item)
+                #send_key_by_id('sb_form_q', item)
+                time.sleep(0.75)
                 send_key_by_id('sb_form_q', Keys.RETURN)
                 # prints search term and item, limited to 80 chars
                 logging.debug(msg=f'Search #{num}: {item[:80]}')
-                time.sleep(random.randint(3, 4))  # random sleep for more human-like, and let ms reward website keep up.
-
+                time.sleep(random.randint(7, 8))  # random sleep for more human-like, and let ms reward website keep up.
+                wait_until_clickable(By.ID, 'id_rc', 30)
+                scrollToBottom(browser)
+                time.sleep(random.randint(5, 7))
+                scrollToTop(browser)
                 # check to see if search is complete, if yes, break out of loop
                 if num % search_limit == 0:
                     if mobile_search:
@@ -638,7 +680,7 @@ def iter_dailies():
         # check at the end of the loop to log if any offers are remaining
         browser.get(DASHBOARD_URL)
         time.sleep(0.1)
-        wait_until_visible(By.TAG_NAME, 'body', 10)  # checks for page load
+        wait_until_visible(By.TAG_NAME, 'body', 20)  # checks for page load
         open_offers = browser.find_elements_by_xpath('//span[contains(@class, "mee-icon-AddMedium")]')
         logging.info(msg=f'Number of incomplete offers remaining: {len(open_offers)}')
     else:
@@ -767,9 +809,26 @@ def sign_in_prompt():
     sign_in_prompt_msg = find_by_class('simpleSignIn')
     if sign_in_prompt_msg:
         logging.info(msg='Detected sign-in prompt')
+        wait_until_clickable(By.LINK_TEXT, 'Sign in', 30) 
         browser.find_element_by_link_text('Sign in').click()
         logging.info(msg='Clicked sign-in prompt')
         time.sleep(4)
+
+
+def ActionTypeSlow(browser, by_, locator, input_text):
+    """Type the given input text"""
+    try:
+        wait_until_clickable(by_, locator, 10)
+        element = browser.find_element(by_, locator)
+        actions = ActionChains(browser)
+        actions.click(element).perform()
+        for s in input_text:
+            element.send_keys(s)
+            time.sleep(random.uniform(0.05, 0.35))
+
+    except Exception as e:
+        logging.exception(msg='Exception when Action Type : %s' % e)
+        pass
 
 
 def get_point_total(pc=False, mobile=False, log=False):
@@ -782,7 +841,7 @@ def get_point_total(pc=False, mobile=False, log=False):
     # wait_until_visible(By.XPATH, '//*[@id="flyoutContent"]', 10)  # check for loaded point display
 
     # TODO add a scroll to obj here
-    if not wait_until_visible(By.CLASS_NAME, 'pcsearch', 10):  # if object not found, return False
+    if not wait_until_visible(By.CLASS_NAME, 'allsearch', 10):  # if object not found, return False
         return False
     # returns None if pc search not found
     # pcsearch = browser.find_element_by_class_name('pcsearch')
@@ -794,10 +853,10 @@ def get_point_total(pc=False, mobile=False, log=False):
             int, browser.find_element_by_class_name('credits2').text.split(' of ')))[0]
         # get pc points
         current_pc_points, max_pc_points = map(
-            int, browser.find_element_by_class_name('pcsearch').text.split('/'))
+            int, browser.find_element_by_class_name('allsearch').text.split('/'))
         # get mobile points
         current_mobile_points, max_mobile_points = map(
-            int, browser.find_element_by_class_name('mobilesearch').text.split('/'))
+            int, browser.find_element_by_class_name('edgesearch').text.split('/'))
         # get edge points
         # disabled because not detected in new point url
         # current_edge_points, max_edge_points = map(
@@ -861,6 +920,10 @@ def ensure_pc_mode_logged_in():
     wait_until_clickable(By.ID, 'id_l', 15)
     click_by_id('id_l')
     time.sleep(0.1)
+    wait_until_clickable(By.ID, 'id_l', 15)
+    wait_until_clickable(By.XPATH, "//*[text()='Sign in' and @aria-hidden='false']//parent::a", 10)
+    click_by_xpath("//*[text()='Sign in' and @aria-hidden='false']//parent::a")
+    wait_until_clickable(By.XPATH, "//*[text()='Sign in']//parent::a", 30)
 
 
 if __name__ == '__main__':
@@ -915,6 +978,7 @@ if __name__ == '__main__':
                         logging.info(msg=f'Mobile App Task not found')
                     time.sleep(1)
                     browser.get(BING_SEARCH_URL)
+                    time.sleep(3)
                     # mobile search
                     search(search_list, mobile_search=True)
                     # get point totals if running just in mobile mode
@@ -937,6 +1001,7 @@ if __name__ == '__main__':
                     browser.get(DASHBOARD_URL)
                     if parser.pc_mode:
                         browser.get(BING_SEARCH_URL)
+                        time.sleep(3)
                         # pc edge search
                         search(search_list)
                     if parser.quiz_mode:
