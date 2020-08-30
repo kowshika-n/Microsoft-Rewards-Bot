@@ -1,3 +1,10 @@
+**2020-08-30**
+
+    - Fixed Bing Login issue and get_point_total
+    - Added sleep times and slow typing to simulate typing.
+    - Added scroll top and  bottom to simulate usage.
+
+
 **2019-07-09**
 
     - Fixed sporadic crashes caused by geolocation requests

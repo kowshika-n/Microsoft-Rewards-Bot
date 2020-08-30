@@ -11,11 +11,13 @@ This program will automatically complete search requests and quizzes on Microsof
 - Randomized search speeds
 - Logs errors and info by default, can log executed commands and search terms by changing the log level to DEBUG
 - Tested and confirmed working for U.S. and U.K. (more to come!)
+
 ## Requirements
-- Python 3.6
-- Requests 2.21.0
-- Selenium 3.14.0
+- Python 3.6+
+- Requests 2.23.0
+- Selenium 3.141.0
 - Chrome Browser
+
 ## How to Use
 1.  Clone and navigate to repo
 2.  Modify `ms_rewards_login_dict.json` with your account names and passwords,
