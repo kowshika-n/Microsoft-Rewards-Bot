@@ -858,7 +858,7 @@ def get_point_total(pc=False, mobile=False, log=True):
     time.sleep(4)
     wait_until_visible(By.CLASS_NAME, 'allsearch', 10)
     if find_by_class('allsearch'):
-        driver.execute_script("arguments[0].scrollIntoView();", browser.find_elements_by_class_name('allsearch'))
+        browser.execute_script("arguments[0].scrollIntoView();", browser.find_elements_by_class_name('allsearch'))
     if not wait_until_visible(By.CLASS_NAME, 'allsearch', 10):  # if object not found, return False
         logging.info(msg='allsearch not found in points page')
         return False
@@ -941,7 +941,8 @@ def ensure_pc_mode_logged_in():
     time.sleep(0.1)
     wait_until_clickable(By.ID, 'id_l', 15)
     wait_until_clickable(By.XPATH, "//*[text()='Sign in' and @aria-hidden='false']//parent::a", 10)
-    click_by_xpath("//*[text()='Sign in' and @aria-hidden='false']//parent::a")
+    if find_by_xpath("//*[text()='Sign in' and @aria-hidden='false']//parent::a"):
+        click_by_xpath("//*[text()='Sign in' and @aria-hidden='false']//parent::a")
     wait_until_clickable(By.XPATH, "//*[text()='Sign in']//parent::a", 30)
 
 
@@ -958,8 +959,11 @@ def ensure_mobile_mode_logged_in():
     time.sleep(0.1)
     # click on ribbon to ensure logged in
     wait_until_clickable(By.XPATH, "//*[text()='Sign in']//parent::a", 10)
-    click_by_xpath("//*[text()='Sign in']//parent::a")
-    wait_until_clickable(By.XPATH, '//*[@aria-label="Preferences"]', 30)
+    if find_by_xpath("//*[text()='Sign in']//parent::a"):
+        click_by_xpath("//*[text()='Sign in']//parent::a")
+        wait_until_clickable(By.XPATH, '//*[@aria-label="Preferences"]', 30)
+    else:
+        click_by_xpath('//*[@aria-label="Preferences"]')
 
 
 if __name__ == '__main__':
