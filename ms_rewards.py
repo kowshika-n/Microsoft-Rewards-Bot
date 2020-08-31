@@ -858,7 +858,9 @@ def get_point_total(pc=False, mobile=False, log=True):
     time.sleep(4)
     wait_until_visible(By.CLASS_NAME, 'allsearch', 10)
     if find_by_class('allsearch'):
-        browser.execute_script("arguments[0].scrollIntoView();", browser.find_elements_by_class_name('allsearch'))
+        element = browser.find_elements_by_class_name('allsearch')
+        if element:
+            element[0].location_once_scrolled_into_view
     if not wait_until_visible(By.CLASS_NAME, 'allsearch', 10):  # if object not found, return False
         logging.info(msg='allsearch not found in points page')
         return False
