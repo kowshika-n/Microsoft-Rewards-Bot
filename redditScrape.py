@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 import lxml.etree as ET
-import os
 import requests
+import os
 
 rssRedditURL = "https://www.reddit.com/r/MicrosoftRewards/search.rss?sort=new&restrict_sr=on&q=flair%3AMail%2BPoints"
 
@@ -11,9 +11,8 @@ headers = {
 
 xmlData = requests.get(rssRedditURL, headers=headers).text
 
-xmlThing = open("tempFileDelete.txt", "wb")
-xmlThing.write(xmlData.encode())
-xmlThing.close()
+with open("tempFileDelete.txt", "wb") as xmlThing:
+    xmlThing.write(xmlData.encode())
 
 tree = ET.parse("tempFileDelete.txt")
 root = tree.getroot()
@@ -21,14 +20,16 @@ root = tree.getroot()
 os.remove("tempFileDelete.txt")
 linkList = []
 
-for content in root.findall(
-    "{http://www.w3.org/2005/Atom}entry/{http://www.w3.org/2005/Atom}content"
-):
+tag = "{http://www.w3.org/2005/Atom}entry/{http://www.w3.org/2005/Atom}content"
+for content in root.findall(tag):
     soup = BeautifulSoup(content.text, "lxml")
     for link in soup.findAll("a"):
-        if "aka.ms" in link.get("href") or "e.microsoft" in link.get("href"):
-            linkList.append(link.get("href"))
+        url = link.get("href")
+        if url and 'http' in url and ("/aka.ms" in url or "/e.microsoft" in url):
+            linkList.append(url)
 
 with open("email_links.txt", "w") as filehandle:
     for listitem in linkList:
         filehandle.write("%s\n" % listitem)
+
+print('Saved %s links from reddit' % len(linkList))
