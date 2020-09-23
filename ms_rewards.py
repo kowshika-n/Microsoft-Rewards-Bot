@@ -3,10 +3,6 @@
 # Version 1.4
 # Date: 09/22/2020
 
-# TODO replace sleeps with minimum sleeps for explicit waits to work, especially after a page redirect
-
-# FIXME Known Cosmetic Issue - logged point total caps out at the point cost of the item on wishlist
-# FIXME Sign in - add addition confirmation click for new 3rd pop-up of the login forms
 # FIXME Search Queries - reduce the amount of extra searches after point cap has been reached
 
 import argparse
@@ -17,7 +13,6 @@ import platform
 import random
 import time
 import zipfile
-import os
 from datetime import datetime, timedelta
 
 import requests
@@ -893,13 +888,9 @@ def get_point_total(pc=False, mobile=False, log=False):
         # get pc points
         current_pc_points, max_pc_points = map(
             int, browser.find_element_by_class_name('allsearch').text.split('/'))
-        # get mobile points
+        # get mobile/edge points
         current_mobile_points, max_mobile_points = map(
-            int, browser.find_element_by_class_name('mobilesearch').text.split('/'))
-        # get edge points
-        # disabled because not detected in new point url
-        # current_edge_points, max_edge_points = map(
-        #     int, browser.find_element_by_class_name('edgesearch').text.split('/'))
+            int, browser.find_element_by_class_name('edgesearch').text.split('/'))
     except ValueError:
         return False
 
