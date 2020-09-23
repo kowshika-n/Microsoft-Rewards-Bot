@@ -307,7 +307,12 @@ def log_in(email_address, pass_word):
         send_key_by_name('passwd', Keys.RETURN)
         time.sleep(0.5)
         # Passwords only require the standard delay
-        wait_until_visible(By.ID, 'uhfLogo', 10)
+        # Added wait to click Yes to Stay signed in
+        wait_until_clickable(By.XPATH, "//input[@type='submit']", 10)
+        if find_by_xpath("//input[@type='submit']"):
+            click_by_xpath("//input[@type='submit']")
+        wait_until_visible(
+            By.XPATH, '//*[@id="uhfLogo" or @id="microsoft"]', 10)
     else:
         # If using mobile 2FA, add a longer delay for sign in approval
         wait_until_visible(By.ID, 'uhfLogo', 300)
@@ -463,6 +468,24 @@ def send_key_by_id(obj_id, key):
             msg=f'Webdriver Error for send key by ID to {obj_id} object')
 
 
+def scrollToBottom(browser):
+    """Scroll to bottom of the page"""
+    try:
+        browser.execute_script("scrollBy(0,250);")
+        browser.execute_script(
+            "window.scrollTo(0, document.body.scrollHeight);")
+    except Exception as e:
+        print('Exception when scrolling : %s' % e)
+
+
+def scrollToTop(driver):
+    """Scroll to top of the page"""
+    try:
+        browser.find_element_by_tag_name('body').send_keys(Keys.HOME)
+    except Exception as e:
+        print('Exception when scrolling : %s' % e)
+
+
 def click_by_class(selector):
     """
     Clicks on node object selected by class name
@@ -474,6 +497,7 @@ def click_by_class(selector):
     except (ElementNotVisibleException, ElementClickInterceptedException, ElementNotInteractableException):
         logging.exception(
             msg=f'Send key by class to {selector} element not visible or clickable.')
+        jsClick(browser.find_element_by_class_name(selector))
     except WebDriverException:
         logging.exception(
             msg=f'Webdriver Error for send key by class to {selector} object')
@@ -490,9 +514,27 @@ def click_by_id(obj_id):
     except (ElementNotVisibleException, ElementClickInterceptedException, ElementNotInteractableException):
         logging.exception(
             msg=f'Click by ID to {obj_id} element not visible or clickable.')
+        jsClick(browser.find_element_by_id(obj_id))
     except WebDriverException:
         logging.exception(
             msg=f'Webdriver Error for click by ID to {obj_id} object')
+
+
+def click_by_xpath(xpath):
+    """
+    Clicks on object located by XPATH
+    :param xpath: xpath tag of html object
+    :return: None
+    """
+    try:
+        browser.find_element_by_xpath(xpath).click()
+    except (ElementNotVisibleException, ElementClickInterceptedException, ElementNotInteractableException):
+        logging.exception(
+            msg=f'Click by xpath to {xpath} element not visible or clickable.')
+        jsClick(browser.find_element_by_xpath(xpath))
+    except WebDriverException:
+        logging.exception(
+            msg=f'Webdriver Error for click by xpath to {xpath} object')
 
 
 def clear_by_id(obj_id):
@@ -513,6 +555,15 @@ def clear_by_id(obj_id):
         browser.refresh()
     except WebDriverException:
         logging.exception(msg='Error.')
+
+
+def jsClick(element):
+    """Click any given element"""
+    try:
+        browser.execute_script("arguments[0].click();", element)
+    except Exception as e:
+        logging.exception(msg=f'Exception when JS click')
+        pass
 
 
 def main_window():
@@ -562,7 +613,7 @@ def search(search_terms, mobile_search=False):
         random.shuffle(search_terms)
         search_terms = list(enumerate(search_terms, start=0))
     else:
-        search_limit = 10
+        search_limit = 15
         random.shuffle(search_terms)
         search_terms = list(enumerate(search_terms, start=0))
 
@@ -571,8 +622,10 @@ def search(search_terms, mobile_search=False):
         logging.info(msg="Search Aborted. No Search Terms.")
     else:
         browser.get(BING_SEARCH_URL)
-        # ensure signed in not in mobile mode (pc mode doesn't register when searching)
-        if not mobile_search:
+        # ensure signed in
+        if mobile_search:
+            ensure_mobile_mode_logged_in()
+        else:
             ensure_pc_mode_logged_in()
 
         for num, item in search_terms:
@@ -588,6 +641,11 @@ def search(search_terms, mobile_search=False):
                 logging.debug(msg=f'Search #{num}: {item[:80]}')
                 # random sleep for more human-like, and let ms reward website keep up.
                 time.sleep(random.randint(3, 4))
+                wait_until_clickable(
+                    By.XPATH, '//*[@id="id_rc" or @id="bpage"]', 15)
+                scrollToBottom(browser)
+                time.sleep(random.randint(2, 3))
+                scrollToTop(browser)
 
                 # check to see if search is complete, if yes, break out of loop
                 if num % search_limit == 0:
@@ -799,6 +857,7 @@ def sign_in_prompt():
     sign_in_prompt_msg = find_by_class('simpleSignIn')
     if sign_in_prompt_msg:
         logging.info(msg='Detected sign-in prompt')
+        wait_until_clickable(By.LINK_TEXT, 'Sign in', 15)
         browser.find_element_by_link_text('Sign in').click()
         logging.info(msg='Clicked sign-in prompt')
         time.sleep(4)
@@ -813,9 +872,15 @@ def get_point_total(pc=False, mobile=False, log=False):
     # get number of total number of points
     # wait_until_visible(By.XPATH, '//*[@id="flyoutContent"]', 10)  # check for loaded point display
 
-    # TODO add a scroll to obj here
+    time.sleep(4)
+    wait_until_visible(By.CLASS_NAME, 'allsearch', 10)
+    if find_by_class('allsearch'):
+        element = browser.find_elements_by_class_name('allsearch')
+        if element:
+            element[0].location_once_scrolled_into_view
     # if object not found, return False
-    if not wait_until_visible(By.CLASS_NAME, 'pcsearch', 10):
+    if not wait_until_visible(By.CLASS_NAME, 'allsearch', 10):
+        logging.info(msg='allsearch not found in points page')
         return False
     # returns None if pc search not found
     # pcsearch = browser.find_element_by_class_name('pcsearch')
@@ -827,7 +892,7 @@ def get_point_total(pc=False, mobile=False, log=False):
             int, browser.find_element_by_class_name('credits2').text.split(' of ')))[0]
         # get pc points
         current_pc_points, max_pc_points = map(
-            int, browser.find_element_by_class_name('pcsearch').text.split('/'))
+            int, browser.find_element_by_class_name('allsearch').text.split('/'))
         # get mobile points
         current_mobile_points, max_mobile_points = map(
             int, browser.find_element_by_class_name('mobilesearch').text.split('/'))
@@ -886,7 +951,7 @@ def click_email_links(links):
 def ensure_pc_mode_logged_in():
     """
     Navigates to www.bing.com and clicks on ribbon to ensure logged in
-    PC mode for some reason sometimes does not fully recognize that the user is logged in
+    PC mode does not fully recognize that the user is logged in
     :return: None
     """
     browser.get(BING_SEARCH_URL)
@@ -895,6 +960,32 @@ def ensure_pc_mode_logged_in():
     wait_until_clickable(By.ID, 'id_l', 15)
     click_by_id('id_l')
     time.sleep(0.1)
+    wait_until_clickable(By.ID, 'id_l', 15)
+    wait_until_clickable(
+        By.XPATH, "//*[text()='Sign in' and @aria-hidden='false']//parent::a", 10)
+    if find_by_xpath("//*[text()='Sign in' and @aria-hidden='false']//parent::a"):
+        click_by_xpath(
+            "//*[text()='Sign in' and @aria-hidden='false']//parent::a")
+    wait_until_clickable(By.XPATH, "//*[text()='Sign in']//parent::a", 15)
+
+def ensure_mobile_mode_logged_in():
+    """
+    Navigates to www.bing.com and clicks on ribbon to ensure logged in
+    Mobile mode does not fully recognize that the user is logged in
+    :return: None
+    """
+    browser.get(BING_SEARCH_URL)
+    time.sleep(0.1)
+    wait_until_clickable(By.XPATH, '//*[@aria-label="Preferences"]', 15)
+    click_by_xpath('//*[@aria-label="Preferences"]')
+    time.sleep(0.1)
+    # click on ribbon to ensure logged in
+    wait_until_clickable(By.XPATH, "//*[text()='Sign in']//parent::a", 10)
+    if find_by_xpath("//*[text()='Sign in']//parent::a"):
+        click_by_xpath("//*[text()='Sign in']//parent::a")
+        wait_until_clickable(By.XPATH, '//*[@aria-label="Preferences"]', 15)
+    else:
+        click_by_xpath('//*[@aria-label="Preferences"]')
 
 
 if __name__ == '__main__':
@@ -941,6 +1032,7 @@ if __name__ == '__main__':
                     parser.headless_setting, MOBILE_USER_AGENT)
                 try:
                     log_in(email, password)
+                    ensure_mobile_mode_logged_in()
                     browser.get(DASHBOARD_URL)
                     time.sleep(3)
                     try:
@@ -951,6 +1043,7 @@ if __name__ == '__main__':
                         logging.info(msg=f'Mobile App Task not found')
                     time.sleep(1)
                     browser.get(BING_SEARCH_URL)
+                    time.sleep(1)
                     # mobile search
                     search(search_list, mobile_search=True)
                     # get point totals if running just in mobile mode
@@ -975,6 +1068,7 @@ if __name__ == '__main__':
                     browser.get(DASHBOARD_URL)
                     if parser.pc_mode:
                         browser.get(BING_SEARCH_URL)
+                        time.sleep(1)
                         # pc edge search
                         search(search_list)
                     if parser.quiz_mode:
