@@ -868,14 +868,14 @@ def get_point_total(pc=False, mobile=False, log=False):
     # wait_until_visible(By.XPATH, '//*[@id="flyoutContent"]', 10)  # check for loaded point display
 
     time.sleep(4)
-    wait_until_visible(By.CLASS_NAME, 'allsearch', 10)
-    if find_by_class('allsearch'):
-        element = browser.find_elements_by_class_name('allsearch')
+    wait_until_visible(By.CLASS_NAME, 'pcsearch', 10)
+    if find_by_class('pcsearch'):
+        element = browser.find_elements_by_class_name('pcsearch')
         if element:
             element[0].location_once_scrolled_into_view
     # if object not found, return False
-    if not wait_until_visible(By.CLASS_NAME, 'allsearch', 10):
-        logging.info(msg='allsearch not found in points page')
+    if not wait_until_visible(By.CLASS_NAME, 'pcsearch', 10):
+        logging.info(msg='pcsearch not found in points page')
         return False
     # returns None if pc search not found
     # pcsearch = browser.find_element_by_class_name('pcsearch')
@@ -887,10 +887,12 @@ def get_point_total(pc=False, mobile=False, log=False):
             int, browser.find_element_by_class_name('credits2').text.split(' of ')))[0]
         # get pc points
         current_pc_points, max_pc_points = map(
-            int, browser.find_element_by_class_name('allsearch').text.split('/'))
-        # get mobile/edge points
+            int, browser.find_element_by_class_name('pcsearch').text.split('/'))
+        # get mobile points
         current_mobile_points, max_mobile_points = map(
-            int, browser.find_element_by_class_name('edgesearch').text.split('/'))
+            int, browser.find_element_by_class_name('mobilesearch').text.split('/'))
+        # get edge points
+        # TODO
     except ValueError:
         return False
 
