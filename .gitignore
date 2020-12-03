@@ -18,3 +18,4 @@ geckodriver.log
 *.pyo
 .DS_Store
 debug.log
+*.vbs
