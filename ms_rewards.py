@@ -1,10 +1,9 @@
 #! /usr/lib/python3.6
 # ms_rewards.py - Searches for results via pc bing browser and mobile, completes quizzes on pc bing browser
-# Version 2020.08.30
+# Version 1.4
+# Date: 09/22/2020
 
-# TODO replace sleeps with minimum sleeps for explicit waits to work, especially after a page redirect
-# FIXME mobile version does not require re-sign in, but pc version does, why?
-# FIXME Known Cosmetic Issue - logged point total caps out at the point cost of the item on wishlist
+# FIXME Search Queries - reduce the amount of extra searches after point cap has been reached
 
 import argparse
 import json
@@ -14,7 +13,6 @@ import platform
 import random
 import time
 import zipfile
-import os
 from datetime import datetime, timedelta
 
 import requests
@@ -55,11 +53,13 @@ def check_python_version():
         message = 'Only Python %s.%s and above is supported.' % minimum_version
         raise Exception(message)
 
+
 def update_driver():
     '''
     Auto deletes Chrome driver to ensure no errors - this forces an autoupdate of chrome drivers. There is probably a more efficient way of doing this.
     '''
     os.remove("drivers/chromedriver.exe")
+
 
 def _log_level_string_to_int(log_level_string):
     log_level_string = log_level_string.upper()
@@ -180,9 +180,11 @@ def get_search_terms():
             response = json.loads(request.text[5:])
             # get all trending searches with their related queries
             for topic in response['default']['trendingSearchesDays'][0]['trendingSearches']:
-                add_new_search_term(search_terms, topic['title']['query'].lower())
+                add_new_search_term(
+                    search_terms, topic['title']['query'].lower())
                 for related_topic in topic['relatedQueries']:
-                    add_new_search_term(search_terms, related_topic['query'].lower())
+                    add_new_search_term(
+                        search_terms, related_topic['query'].lower())
             time.sleep(random.randint(3, 5))
         except RequestException:
             logging.error('Error retrieving google trends json.')
@@ -208,14 +210,18 @@ def download_driver(driver_path, system):
     r = requests.get(url)
     latest_version = r.text
     if system == "Windows":
-        url = "https://chromedriver.storage.googleapis.com/{}/chromedriver_win32.zip".format(latest_version)
+        url = "https://chromedriver.storage.googleapis.com/{}/chromedriver_win32.zip".format(
+            latest_version)
     elif system == "Darwin":
-        url = "https://chromedriver.storage.googleapis.com/{}/chromedriver_mac64.zip".format(latest_version)
+        url = "https://chromedriver.storage.googleapis.com/{}/chromedriver_mac64.zip".format(
+            latest_version)
     elif system == "Linux":
-        url = "https://chromedriver.storage.googleapis.com/{}/chromedriver_linux64.zip".format(latest_version)
+        url = "https://chromedriver.storage.googleapis.com/{}/chromedriver_linux64.zip".format(
+            latest_version)
 
     response = requests.get(url, stream=True)
-    zip_file_path = os.path.join(os.path.dirname(driver_path), os.path.basename(url))
+    zip_file_path = os.path.join(os.path.dirname(
+        driver_path), os.path.basename(url))
     with open(zip_file_path, "wb") as handle:
         for chunk in response.iter_content(chunk_size=512):
             if chunk:  # filter out keep alive chunks
@@ -231,7 +237,8 @@ def download_driver(driver_path, system):
 
     os.chmod(driver_path, 0o755)
     # way to note which chromedriver version is installed
-    open(os.path.join(os.path.dirname(driver_path), "{}.txt".format(latest_version)), "w").close()
+    open(os.path.join(os.path.dirname(driver_path),
+                      "{}.txt".format(latest_version)), "w").close()
 
 
 def browser_setup(headless_mode, user_agent):
@@ -259,8 +266,8 @@ def browser_setup(headless_mode, user_agent):
     options.add_experimental_option('w3c', False)
 
     prefs = {
-        "profile.default_content_setting_values.geolocation" : 2, "profile.default_content_setting_values.notifications": 2
-        }
+        "profile.default_content_setting_values.geolocation": 2, "profile.default_content_setting_values.notifications": 2
+    }
 
     options.add_experimental_option("prefs", prefs)
 
@@ -282,7 +289,7 @@ def log_in(email_address, pass_word):
     time.sleep(0.5)
     send_key_by_name('loginfmt', Keys.RETURN)
     logging.debug(msg='Sent Email Address.')
-    time.sleep(10)
+    time.sleep(5)
 
     if not parser.use_authenticator:
         # wait for password form and enter password
@@ -293,13 +300,14 @@ def log_in(email_address, pass_word):
         # wait for 'sign in' button to be clickable and sign in
         time.sleep(0.5)
         send_key_by_name('passwd', Keys.RETURN)
-        # Passwords only require the standard delay
         time.sleep(0.5)
+        # Passwords only require the standard delay
         # Added wait to click Yes to Stay signed in
         wait_until_clickable(By.XPATH, "//input[@type='submit']", 10)
         if find_by_xpath("//input[@type='submit']"):
             click_by_xpath("//input[@type='submit']")
-        wait_until_visible(By.XPATH, '//*[@id="uhfLogo" or @id="microsoft"]', 30)
+        wait_until_visible(
+            By.XPATH, '//*[@id="uhfLogo" or @id="microsoft"]', 10)
     else:
         # If using mobile 2FA, add a longer delay for sign in approval
         wait_until_visible(By.ID, 'uhfLogo', 300)
@@ -396,9 +404,11 @@ def wait_until_clickable(by_, selector, time_to_wait=10):
     :return: None
     """
     try:
-        WebDriverWait(browser, time_to_wait).until(ec.element_to_be_clickable((by_, selector)))
+        WebDriverWait(browser, time_to_wait).until(
+            ec.element_to_be_clickable((by_, selector)))
     except TimeoutException:
-        logging.exception(msg=f'{selector} element Not clickable - Timeout Exception', exc_info=False)
+        logging.exception(
+            msg=f'{selector} element Not clickable - Timeout Exception', exc_info=False)
         screenshot(selector)
     except UnexpectedAlertPresentException:
         # FIXME
@@ -421,7 +431,8 @@ def send_key_by_name(name, key):
     try:
         browser.find_element_by_name(name).send_keys(key)
     except (ElementNotVisibleException, ElementClickInterceptedException, ElementNotInteractableException):
-        logging.exception(msg=f'Send key by name to {name} element not visible or clickable.')
+        logging.exception(
+            msg=f'Send key by name to {name} element not visible or clickable.')
     except NoSuchElementException:
         logging.exception(msg=f'Send key to {name} element, no such element.')
         screenshot(name)
@@ -440,20 +451,24 @@ def send_key_by_id(obj_id, key):
     try:
         browser.find_element_by_id(obj_id).send_keys(key)
     except (ElementNotVisibleException, ElementClickInterceptedException, ElementNotInteractableException):
-        logging.exception(msg=f'Send key by ID to {obj_id} element not visible or clickable.')
+        logging.exception(
+            msg=f'Send key by ID to {obj_id} element not visible or clickable.')
     except NoSuchElementException:
-        logging.exception(msg=f'Send key by ID to {obj_id} element, no such element')
+        logging.exception(
+            msg=f'Send key by ID to {obj_id} element, no such element')
         screenshot(obj_id)
         browser.refresh()
     except WebDriverException:
-        logging.exception(msg=f'Webdriver Error for send key by ID to {obj_id} object')
+        logging.exception(
+            msg=f'Webdriver Error for send key by ID to {obj_id} object')
 
 
 def scrollToBottom(browser):
     """Scroll to bottom of the page"""
     try:
         browser.execute_script("scrollBy(0,250);")
-        browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        browser.execute_script(
+            "window.scrollTo(0, document.body.scrollHeight);")
     except Exception as e:
         print('Exception when scrolling : %s' % e)
 
@@ -475,10 +490,12 @@ def click_by_class(selector):
     try:
         browser.find_element_by_class_name(selector).click()
     except (ElementNotVisibleException, ElementClickInterceptedException, ElementNotInteractableException):
-        logging.exception(msg=f'Send key by class to {selector} element not visible or clickable.')
+        logging.exception(
+            msg=f'Send key by class to {selector} element not visible or clickable.')
         jsClick(browser.find_element_by_class_name(selector))
     except WebDriverException:
-        logging.exception(msg=f'Webdriver Error for send key by class to {selector} object')
+        logging.exception(
+            msg=f'Webdriver Error for send key by class to {selector} object')
 
 
 def click_by_id(obj_id):
@@ -490,10 +507,12 @@ def click_by_id(obj_id):
     try:
         browser.find_element_by_id(obj_id).click()
     except (ElementNotVisibleException, ElementClickInterceptedException, ElementNotInteractableException):
-        logging.exception(msg=f'Click by ID to {obj_id} element not visible or clickable.')
+        logging.exception(
+            msg=f'Click by ID to {obj_id} element not visible or clickable.')
         jsClick(browser.find_element_by_id(obj_id))
     except WebDriverException:
-        logging.exception(msg=f'Webdriver Error for click by ID to {obj_id} object')
+        logging.exception(
+            msg=f'Webdriver Error for click by ID to {obj_id} object')
 
 
 def click_by_xpath(xpath):
@@ -505,10 +524,12 @@ def click_by_xpath(xpath):
     try:
         browser.find_element_by_xpath(xpath).click()
     except (ElementNotVisibleException, ElementClickInterceptedException, ElementNotInteractableException):
-        logging.exception(msg=f'Click by xpath to {xpath} element not visible or clickable.')
+        logging.exception(
+            msg=f'Click by xpath to {xpath} element not visible or clickable.')
         jsClick(browser.find_element_by_xpath(xpath))
     except WebDriverException:
-        logging.exception(msg=f'Webdriver Error for click by xpath to {xpath} object')
+        logging.exception(
+            msg=f'Webdriver Error for click by xpath to {xpath} object')
 
 
 def clear_by_id(obj_id):
@@ -520,9 +541,11 @@ def clear_by_id(obj_id):
     try:
         browser.find_element_by_id(obj_id).clear()
     except (ElementNotVisibleException, ElementNotInteractableException):
-        logging.exception(msg=f'Clear by ID to {obj_id} element not visible or clickable.')
+        logging.exception(
+            msg=f'Clear by ID to {obj_id} element not visible or clickable.')
     except NoSuchElementException:
-        logging.exception(msg=f'Send key by ID to {obj_id} element, no such element')
+        logging.exception(
+            msg=f'Send key by ID to {obj_id} element, no such element')
         screenshot(obj_id)
         browser.refresh()
     except WebDriverException:
@@ -536,7 +559,6 @@ def jsClick(element):
     except Exception as e:
         logging.exception(msg=f'Exception when JS click')
         pass
-
 
 
 def main_window():
@@ -591,7 +613,7 @@ def search(search_terms, mobile_search=False):
         search_terms = list(enumerate(search_terms, start=0))
 
     logging.info(msg="Search Start")
-    if search_terms is None or search_terms == []:
+    if search_terms == [] or search_terms is None:
         logging.info(msg="Search Aborted. No Search Terms.")
     else:
         browser.get(BING_SEARCH_URL)
@@ -604,23 +626,22 @@ def search(search_terms, mobile_search=False):
         for num, item in search_terms:
             try:
                 # clears search bar and enters in next search term
-                logging.info(msg=f'Searching #{num} : {item}')
                 time.sleep(1)
                 wait_until_visible(By.ID, 'sb_form_q', 15)
-                click_by_id('sb_form_q')
                 clear_by_id('sb_form_q')
-                time.sleep(2)
-                ActionTypeSlow(browser, By.ID, 'sb_form_q', item)
-                #send_key_by_id('sb_form_q', item)
-                time.sleep(0.75)
+                send_key_by_id('sb_form_q', item)
+                time.sleep(0.1)
                 send_key_by_id('sb_form_q', Keys.RETURN)
                 # prints search term and item, limited to 80 chars
                 logging.debug(msg=f'Search #{num}: {item[:80]}')
-                time.sleep(random.randint(7, 8))  # random sleep for more human-like, and let ms reward website keep up.
-                wait_until_clickable(By.XPATH, '//*[@id="id_rc" or @id="bpage"]', 30)
+                # random sleep for more human-like, and let ms reward website keep up.
+                time.sleep(random.randint(3, 4))
+                wait_until_clickable(
+                    By.XPATH, '//*[@id="id_rc" or @id="bpage"]', 15)
                 scrollToBottom(browser)
-                time.sleep(random.randint(5, 7))
+                time.sleep(random.randint(2, 3))
                 scrollToTop(browser)
+
                 # check to see if search is complete, if yes, break out of loop
                 if num % search_limit == 0:
                     if mobile_search:
@@ -647,11 +668,13 @@ def iter_dailies():
     """
     browser.get(DASHBOARD_URL)
     time.sleep(4)
-    open_offers = browser.find_elements_by_xpath('//span[contains(@class, "mee-icon-AddMedium")]')
+    open_offers = browser.find_elements_by_xpath(
+        '//span[contains(@class, "mee-icon-AddMedium")]')
     if open_offers:
         logging.info(msg=f'Number of open offers: {len(open_offers)}')
         # get common parent element of open_offers
-        parent_elements = [open_offer.find_element_by_xpath('..//..//..//..') for open_offer in open_offers]
+        parent_elements = [open_offer.find_element_by_xpath(
+            '..//..//..//..') for open_offer in open_offers]
         # get points links from parent, # finds link (a) descendant of selected node
         offer_links = [
             parent.find_element_by_xpath(
@@ -695,9 +718,11 @@ def iter_dailies():
         # check at the end of the loop to log if any offers are remaining
         browser.get(DASHBOARD_URL)
         time.sleep(0.1)
-        wait_until_visible(By.TAG_NAME, 'body', 20)  # checks for page load
-        open_offers = browser.find_elements_by_xpath('//span[contains(@class, "mee-icon-AddMedium")]')
-        logging.info(msg=f'Number of incomplete offers remaining: {len(open_offers)}')
+        wait_until_visible(By.TAG_NAME, 'body', 10)  # checks for page load
+        open_offers = browser.find_elements_by_xpath(
+            '//span[contains(@class, "mee-icon-AddMedium")]')
+        logging.info(
+            msg=f'Number of incomplete offers remaining: {len(open_offers)}')
     else:
         logging.info(msg='No dailies found.')
 
@@ -742,7 +767,8 @@ def lightning_quiz():
             time.sleep(3)
             for i in range(10):
                 if find_by_id(f'rqAnswerOption{i}'):
-                    browser.execute_script(f"document.querySelectorAll('#rqAnswerOption{i}').forEach(el=>el.click());")
+                    browser.execute_script(
+                        f"document.querySelectorAll('#rqAnswerOption{i}').forEach(el=>el.click());")
                     logging.debug(msg=f'Clicked {i}')
                     time.sleep(2)
         # let new page load
@@ -795,14 +821,16 @@ def drag_and_drop_quiz():
             right_answers = find_by_class('correctAnswer')
             # remove right answers from possible choices
             if right_answers:
-                drag_option = [x for x in drag_option if x not in right_answers]
+                drag_option = [
+                    x for x in drag_option if x not in right_answers]
             if drag_option:
                 # select first possible choice and remove from options
                 choice_a = random.choice(drag_option)
                 drag_option.remove(choice_a)
                 # select second possible choice from remaining options
                 choice_b = random.choice(drag_option)
-                ActionChains(browser).drag_and_drop(choice_a, choice_b).perform()
+                ActionChains(browser).drag_and_drop(
+                    choice_a, choice_b).perform()
         except (WebDriverException, TypeError):
             logging.debug(msg='Unknown Error.')
             continue
@@ -824,29 +852,13 @@ def sign_in_prompt():
     sign_in_prompt_msg = find_by_class('simpleSignIn')
     if sign_in_prompt_msg:
         logging.info(msg='Detected sign-in prompt')
-        wait_until_clickable(By.LINK_TEXT, 'Sign in', 30) 
+        wait_until_clickable(By.LINK_TEXT, 'Sign in', 15)
         browser.find_element_by_link_text('Sign in').click()
         logging.info(msg='Clicked sign-in prompt')
         time.sleep(4)
 
 
-def ActionTypeSlow(browser, by_, locator, input_text):
-    """Type the given input text"""
-    try:
-        wait_until_clickable(by_, locator, 10)
-        element = browser.find_element(by_, locator)
-        actions = ActionChains(browser)
-        actions.click(element).perform()
-        for s in input_text:
-            element.send_keys(s)
-            time.sleep(random.uniform(0.05, 0.35))
-
-    except Exception as e:
-        logging.exception(msg='Exception when Action Type : %s' % e)
-        pass
-
-
-def get_point_total(pc=False, mobile=False, log=True):
+def get_point_total(pc=False, mobile=False, log=False):
     """
     Checks for points for pc/edge and mobile, logs if flag is set
     :return: Boolean for either pc/edge or mobile points met
@@ -856,13 +868,14 @@ def get_point_total(pc=False, mobile=False, log=True):
     # wait_until_visible(By.XPATH, '//*[@id="flyoutContent"]', 10)  # check for loaded point display
 
     time.sleep(4)
-    wait_until_visible(By.CLASS_NAME, 'allsearch', 10)
-    if find_by_class('allsearch'):
-        element = browser.find_elements_by_class_name('allsearch')
+    wait_until_visible(By.CLASS_NAME, 'pcsearch', 10)
+    if find_by_class('pcsearch'):
+        element = browser.find_elements_by_class_name('pcsearch')
         if element:
             element[0].location_once_scrolled_into_view
-    if not wait_until_visible(By.CLASS_NAME, 'allsearch', 10):  # if object not found, return False
-        logging.info(msg='allsearch not found in points page')
+    # if object not found, return False
+    if not wait_until_visible(By.CLASS_NAME, 'pcsearch', 10):
+        logging.info(msg='pcsearch not found in points page')
         return False
     # returns None if pc search not found
     # pcsearch = browser.find_element_by_class_name('pcsearch')
@@ -874,14 +887,12 @@ def get_point_total(pc=False, mobile=False, log=True):
             int, browser.find_element_by_class_name('credits2').text.split(' of ')))[0]
         # get pc points
         current_pc_points, max_pc_points = map(
-            int, browser.find_element_by_class_name('allsearch').text.split('/'))
-        # get edge points
+            int, browser.find_element_by_class_name('pcsearch').text.split('/'))
+        # get mobile points
         current_mobile_points, max_mobile_points = map(
-            int, browser.find_element_by_class_name('edgesearch').text.split('/'))
+            int, browser.find_element_by_class_name('mobilesearch').text.split('/'))
         # get edge points
-        # disabled because not detected in new point url
-        # current_edge_points, max_edge_points = map(
-        #     int, browser.find_element_by_class_name('edgesearch').text.split('/'))
+        # TODO
     except ValueError:
         return False
 
@@ -890,7 +901,8 @@ def get_point_total(pc=False, mobile=False, log=True):
         logging.info(msg=f'Total points = {current_point_total}')
         logging.info(msg=f'PC points = {current_pc_points}/{max_pc_points}')
         # logging.info(msg=f'Edge points = {current_edge_points}/{max_edge_points}')
-        logging.info(msg=f'Mobile points = {current_mobile_points}/{max_mobile_points}')
+        logging.info(
+            msg=f'Mobile points = {current_mobile_points}/{max_mobile_points}')
 
     # if pc flag, check if pc and edge points met
     if pc:
@@ -942,11 +954,12 @@ def ensure_pc_mode_logged_in():
     click_by_id('id_l')
     time.sleep(0.1)
     wait_until_clickable(By.ID, 'id_l', 15)
-    wait_until_clickable(By.XPATH, "//*[text()='Sign in' and @aria-hidden='false']//parent::a", 10)
+    wait_until_clickable(
+        By.XPATH, "//*[text()='Sign in' and @aria-hidden='false']//parent::a", 10)
     if find_by_xpath("//*[text()='Sign in' and @aria-hidden='false']//parent::a"):
-        click_by_xpath("//*[text()='Sign in' and @aria-hidden='false']//parent::a")
-    wait_until_clickable(By.XPATH, "//*[text()='Sign in']//parent::a", 30)
-
+        click_by_xpath(
+            "//*[text()='Sign in' and @aria-hidden='false']//parent::a")
+    wait_until_clickable(By.XPATH, "//*[text()='Sign in']//parent::a", 15)
 
 def ensure_mobile_mode_logged_in():
     """
@@ -963,7 +976,7 @@ def ensure_mobile_mode_logged_in():
     wait_until_clickable(By.XPATH, "//*[text()='Sign in']//parent::a", 10)
     if find_by_xpath("//*[text()='Sign in']//parent::a"):
         click_by_xpath("//*[text()='Sign in']//parent::a")
-        wait_until_clickable(By.XPATH, '//*[@aria-label="Preferences"]', 30)
+        wait_until_clickable(By.XPATH, '//*[@aria-label="Preferences"]', 15)
     else:
         click_by_xpath('//*[@aria-label="Preferences"]')
 
@@ -1005,9 +1018,11 @@ if __name__ == '__main__':
 
             if parser.mobile_mode:
                 # MOBILE MODE
-                logging.info(msg='-------------------------MOBILE-------------------------')
+                logging.info(
+                    msg='-------------------------MOBILE-------------------------')
                 # set up headless browser and mobile user agent
-                browser = browser_setup(parser.headless_setting, MOBILE_USER_AGENT)
+                browser = browser_setup(
+                    parser.headless_setting, MOBILE_USER_AGENT)
                 try:
                     log_in(email, password)
                     ensure_mobile_mode_logged_in()
@@ -1021,7 +1036,7 @@ if __name__ == '__main__':
                         logging.info(msg=f'Mobile App Task not found')
                     time.sleep(1)
                     browser.get(BING_SEARCH_URL)
-                    time.sleep(3)
+                    time.sleep(1)
                     # mobile search
                     search(search_list, mobile_search=True)
                     # get point totals if running just in mobile mode
@@ -1031,12 +1046,14 @@ if __name__ == '__main__':
                 except KeyboardInterrupt:
                     browser.quit()
                 except WebDriverException:
-                    logging.info(msg=f'WebDriverException while executing mobile portion', exc_info=True)
+                    logging.info(
+                        msg=f'WebDriverException while executing mobile portion', exc_info=True)
                     browser.quit()
 
             if parser.pc_mode or parser.quiz_mode or parser.email_mode:
                 # PC MODE
-                logging.info(msg='-------------------------PC-------------------------')
+                logging.info(
+                    msg='-------------------------PC-------------------------')
                 # set up edge headless browser and edge pc user agent
                 browser = browser_setup(parser.headless_setting, PC_USER_AGENT)
                 try:
@@ -1044,7 +1061,7 @@ if __name__ == '__main__':
                     browser.get(DASHBOARD_URL)
                     if parser.pc_mode:
                         browser.get(BING_SEARCH_URL)
-                        time.sleep(3)
+                        time.sleep(1)
                         # pc edge search
                         search(search_list)
                     if parser.quiz_mode:
@@ -1058,7 +1075,8 @@ if __name__ == '__main__':
                 except KeyboardInterrupt:
                     print('Stopping Script...')
                 except WebDriverException:
-                    logging.error(msg=f'WebDriverException while executing pc portion', exc_info=True)
+                    logging.error(
+                        msg=f'WebDriverException while executing pc portion', exc_info=True)
                 finally:
                     browser.quit()
     except WebDriverException:
